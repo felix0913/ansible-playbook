@@ -1,0 +1,4 @@
+---
+- hosts: zabbix_agent
+  roles:
+  - install_zabbix_agent

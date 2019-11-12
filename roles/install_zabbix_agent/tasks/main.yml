@@ -1,0 +1,21 @@
+---
+  - name: install nesscerry software
+    yum: name=pcre state=latest
+  - name: create zabbix user
+    user: name={{ zabbix_user }} state=present createhome=no shell=/sbin/nologin
+  - name: copy zabbix.tar.gz 
+    copy: src=zabbix-{{ zabbix_version }}.tar.gz dest=/root/zabbix-{{ zabbix_version }}.tar.gz
+  - name: uncompression zabbix.tar.gz
+    shell: tar zxf /root/zabbix-{{ zabbix_version }}.tar.gz 
+  - name: copy zabbix start script
+    template: src=zabbix_agentd dest=/etc/init.d/zabbix_agentd owner=root group=root mode=0755
+  - name: configure
+    shell: cd /root/zabbix-{{ zabbix_version }} && ./configure --enable-agent
+  - name: make install
+    shell: cd /root/zabbix-{{ zabbix_version }} && make install
+  - name: copy zabbix config file
+    template: src=zabbix_agentd.conf dest=/usr/local/etc/zabbix_agentd.conf owner={{ zabbix_user }} group={{ zabbix_user }} mode=0644
+  - name: customized zabbix_agent
+    shell: sed -i "s#Hostname=Hostname=Zabbix server#Hostname=`hostname`#g" /usr/local/etc/zabbix_agentd.conf 
+  - name: start zabbix
+    service: name=zabbix_agentd state=started enabled=true
