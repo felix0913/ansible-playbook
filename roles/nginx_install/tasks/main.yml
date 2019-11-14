@@ -1,8 +1,9 @@
 ---  
   - name: delete other repo
     file: path=/etc/yum.repos.d/ state=absent
+  - name: create path
     file: path=/etc/yum.repos.d/ state=directory
-  - name: add 163 repo
+  - name: add 163 repo for 7
     copy: 
       src: CentOS6-Base-163.repo 
       dest: /etc/yum.repos.d/CentOS7-Base-163.repo
