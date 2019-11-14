@@ -1,0 +1,93 @@
+---  
+  - name: delete other repo
+    file: path=/etc/yum.repos.d/ state=absent
+    file: path=/etc/yum.repos.d/ state=directory
+  - name: add 163 repo
+    copy: 
+      src: CentOS6-Base-163.repo 
+      dest: /etc/yum.repos.d/CentOS7-Base-163.repo
+    when: ansible_os_family == "RedHat" and ansible_distribution_major_version == "7"
+  - name: add 163 repo for 6
+    copy: 
+      src: CentOS6-Base-163.repo 
+      dest: /etc/yum.repos.d/CentOS6-Base-163.repo
+    when: ansible_os_family == "RedHat" and ansible_distribution_major_version == "6"
+  - name: install nesscerry rpm
+    yum: name={{ item }} state=present
+    with_items:
+      - openssl
+      - openssl-devel
+      - pcre-devel
+      - gcc-c++
+      - bison
+      - bison-devel
+      - ncurses-devel
+      - perl-Data-Dumper
+      - boost
+      - boost-doc
+      - boost-devel
+      - make
+  - name: selinux
+    shell: setenforce 0
+  - name: selinux config
+    copy:
+      src: selinux_config
+      dest: /etc/selinux/config
+  - name: copy nginx tar.gz to agent
+    copy: 
+      src: nginx-{{ NGX_VERSION }}.tar.gz
+      dest: /root/nginx-{{ NGX_VERSION }}.tar.gz
+  - name: uncompression nginx tar.gz
+    shell: tar zxf  /root/nginx-{{ NGX_VERSION }}.tar.gz
+  - name: add user
+    user: 
+      name: "{{ NGX_USER }}"
+      state: present
+      createhome: no
+      shell: /sbin/nologin
+  - name: create nginx directory
+    file: path={{ NGX_HOME }} state=directory
+  - name: configure
+    shell: cd /root/nginx-{{ NGX_VERSION }} && ./configure \
+                --prefix={{ NGX_HOME }} \
+                --error-log-path=/data/nginx/logs/error.log \
+                --http-log-path=/data/nginx/logs/access.log \
+                --pid-path={{ NGX_HOME }}/logs/nginx.pid \
+                --lock-path=/var/run/nginx.lock \
+                --user=www \
+                --group=www \
+                --with-pcre \
+                --with-http_v2_module \
+                --with-http_ssl_module \
+                --with-http_realip_module \
+                --with-http_addition_module \
+                --with-http_sub_module \
+                --with-http_dav_module \
+                --with-http_flv_module \
+                --with-http_mp4_module \
+                --with-http_gunzip_module \
+                --with-http_gzip_static_module \
+                --with-http_random_index_module \
+                --with-http_secure_link_module \
+                --with-http_stub_status_module \
+                --with-http_auth_request_module \
+                --with-mail \
+                --with-mail_ssl_module \
+                --with-file-aio \
+                --with-http_v2_module \
+                --with-threads \
+                --with-stream \
+                --with-stream_ssl_module
+  - name: make install
+    shell: cd /root/nginx-{{ NGX_VERSION }} && make && make install
+  - name: nginx service file
+    template:
+      src: nginx.service_7
+      dest: /usr/lib/systemd/system/nginx.service
+    when: ansible_os_family == "RedHat" and ansible_distribution_major_version == "7"
+  - name: start nginx using systemd
+    systemd: 
+      name: nginx
+      daemon_reload: yes
+      state: started
+    when: ansible_os_family == "RedHat" and ansible_distribution_major_version == "7"

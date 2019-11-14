@@ -1,0 +1,12 @@
+[Unit]
+Description=nginx - high performance web server
+After=network.target remote-fs.target nss-lookup.target
+
+[Service]
+Type=forking
+ExecStart={{ NGX_HOME }}/sbin/nginx -c {{ NGX_HOME }}/conf/nginx.conf
+ExecReload={{ NGX_HOME }}/sbin/nginx -s reload
+ExecStop={{ NGX_HOME }}/sbin/nginx -s stop
+
+[Install]
+WantedBy=multi-user.target
